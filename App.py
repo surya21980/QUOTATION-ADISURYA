@@ -3,6 +3,7 @@
 
 import streamlit as st
 import pandas as pd
+import re
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Database Sales", layout="wide")
@@ -21,11 +22,11 @@ try:
     df = load_data()
     
     # Bagian Pencarian
-    search_query = st.text_input("🔍 Ketik Part Number atau Keterangan (Pisahkan dengan koma untuk cari banyak):")
+    search_query = st.text_input("🔍 Ketik [P/N] [Desc] atau [Merek] - [Pisahkan dengan (,) atau (;) untuk cari banyak]:")
     
     if search_query:
-        queries = [q.strip() for q in search_query.split(',')]
-        
+        #queries = [q.strip() for q in search_query.split(',')]
+        queries = [q.strip() for q in re.split(r'[;,]', search_query)]
         # Filter data
         filtered_df = df[df.apply(lambda row: any(
             any(str(q).lower() in str(cell).lower() for q in queries) 
@@ -39,25 +40,24 @@ try:
             st.success(f"Ditemukan {len(filtered_df)} item.")
             st.dataframe(filtered_df, use_container_width=True, hide_index=True)
             
+                    
+            # --- BAGIAN COPY DALAM FORMAT TABEL (CSV) ---
             st.write("---")
             st.subheader("📋 Copy Data Hasil Pencarian")
             
-            # Mengubah tabel hasil pencarian menjadi format CSV text
-            csv_text = filtered_df.to_csv(index=False, sep='\t') # sep='\t' agar saat di-paste ke Excel/WA rapi per kolom
+            # Pilih hanya kolom yang ingin ditampilkan (Urutannya harus sama dengan nama kolom di Excel kamu)
+            kolom_untuk_dicopy = ['PART NUMBER', 'KETERANGAN', 'HARGA', 'MEREK']
+            df_untuk_copy = filtered_df[kolom_untuk_dicopy]
+            
+            # Mengubah dataframe pilihan menjadi format CSV text
+            csv_text = df_untuk_copy.to_csv(index=False, sep='\t') 
             
             st.text_area("Copy teks tabel ini (Bisa langsung di-paste ke Excel/WA):", 
                          value=csv_text, 
                          height=200,
                          help="Klik kotak ini, lalu tekan Ctrl+A (Select All) dan Ctrl+C (Copy)")
             
-            # Tambahan tombol download untuk jaga-jaga
-            st.download_button(
-                label="📥 Download Hasil Pencarian (.csv)",
-                data=filtered_df.to_csv(index=False).encode('utf-8'),
-                file_name='hasil_pencarian.csv',
-                mime='text/csv',
-            )
-        
+                    
         if not_found:
             st.error(f"Peringatan: Item berikut tidak ditemukan di database: **{', '.join(not_found)}**")
             

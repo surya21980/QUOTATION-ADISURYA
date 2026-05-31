@@ -10,8 +10,9 @@ st.set_page_config(page_title="Sistem Database", layout="wide")
 
 st.title("📦 Sistem Database Terpadu")
 
-# Ganti dengan link CSV Google Sheets kamu
-SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNxHkSCvjIgy40LYeVZyQ3HLemYVpE6TnvxjXhj2ifNxBbOePlHZ7CYfYpR2x00Yjpjs0zVH6jQEc8/pub?output=csv"
+# Ganti dengan link CSV Google Sheets kamu0
+# SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNxHkSCvjIgy40LYeVZyQ3HLemYVpE6TnvxjXhj2ifNxBbOePlHZ7CYfYpR2x00Yjpjs0zVH6jQEc8/pub?output=csv"
+SHEET_URL = st.secrets["SHEET_URL"]
 
 @st.cache_data(ttl=600)
 def load_data():

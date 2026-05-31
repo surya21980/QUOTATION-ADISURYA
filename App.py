@@ -53,21 +53,21 @@ try:
             
             # --- CEK BARANG TIDAK DITEMUKAN ---
             not_found = [q for q in queries if not df.apply(lambda row: row.astype(str).str.contains(q, case=False).any(), axis=1).any()]
+            
+            # Semua yang ada di bawah ini HARUS MENJOROK KE DALAM (Indentasi)
             if not_found:
                 st.error(f"Peringatan: Item berikut tidak ditemukan: **{', '.join(not_found)}**")
                 
-                # Kirim ke Telegram tanpa asyncio agar tidak crash
                 # --- KIRIM NOTIFIKASI TELEGRAM ---
-            try:
-                TOKEN = st.secrets["TELEGRAM_TOKEN"]
-                CHAT_ID = st.secrets["TELEGRAM_CHAT_ID"]
-                pesan = f"⚠️ Sales mencari barang tapi tidak ada: {', '.join(not_found)}"
-                url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text={pesan}"
-                requests.get(url)
-                st.success("Notifikasi sudah dikirim ke Direksi!")
-            except Exception as e:
-                st.warning("Gagal mengirim notifikasi.")
-
+                try:
+                    TOKEN = st.secrets["TELEGRAM_TOKEN"]
+                    CHAT_ID = st.secrets["TELEGRAM_CHAT_ID"]
+                    pesan = f"⚠️ Sales mencari barang tapi tidak ada: {', '.join(not_found)}"
+                    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text={pesan}"
+                    requests.get(url)
+                    st.success("Notifikasi sudah dikirim ke Direksi!")
+                except Exception as e:
+                    st.warning("Gagal mengirim notifikasi.")
     # --- TAB 2: AREA DIREKSI ---
     with tab2:
         st.subheader("📊 Area Manajemen Direksi")

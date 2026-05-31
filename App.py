@@ -1,18 +1,22 @@
 import streamlit as st
 import pandas as pd
 import re
-import requests # Ditambahkan untuk mengirim pesan Telegram dengan cara lebih mudah
+import requests
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Sistem Database", layout="wide")
 
 st.title("📦 Sistem Database Terpadu")
 
+# Ambil data dari Secrets
 SHEET_URL = st.secrets["SHEET_URL"]
 
 @st.cache_data(ttl=600)
 def load_data():
-    return pd.read_csv(SHEET_URL)
+    df = pd.read_csv(SHEET_URL)
+    # PENTING: Membersihkan spasi tersembunyi di nama kolom
+    df.columns = df.columns.str.strip()
+    return df
 
 try:
     df = load_data()
@@ -28,6 +32,7 @@ try:
         if search_sales:
             queries = [q.strip() for q in re.split(r'[;,]', search_sales)]
             
+            # Kolom untuk Sales
             df_sales = df[['PART NUMBER', 'KETERANGAN', 'MEREK', 'HARGA', 'BARIS KE', 'CUST']]
             
             filtered = df_sales[df_sales.apply(lambda row: any(any(str(q).lower() in str(cell).lower() for q in queries) for cell in row), axis=1)]
@@ -47,27 +52,29 @@ try:
                     }
                 )
                 
+                # Copy tabel khusus untuk WA (4 kolom)
                 df_copy = filtered[['PART NUMBER', 'KETERANGAN', 'MEREK', 'HARGA']]
                 csv_text = df_copy.to_csv(index=False, sep='\t')
-                st.text_area("Copy tabel ini untuk Excel/WA :", value=csv_text, height=150)
+                st.text_area("Copy tabel ini untuk Excel/WA:", value=csv_text, height=150)
             
             # --- CEK BARANG TIDAK DITEMUKAN ---
-            not_found = [q for q in queries if not df.apply(lambda row: row.astype(str).str.contains(q, case=False).any(), axis=1).any()]
+            not_found = []
+            for q in queries:
+                if not df.apply(lambda row: row.astype(str).str.contains(q, case=False).any(), axis=1).any():
+                    not_found.append(q)
             
-            # Semua yang ada di bawah ini HARUS MENJOROK KE DALAM (Indentasi)
             if not_found:
                 st.error(f"Peringatan: Item berikut tidak ditemukan: **{', '.join(not_found)}**")
-                
-                # --- KIRIM NOTIFIKASI TELEGRAM ---
+                # Notifikasi Telegram
                 try:
                     TOKEN = st.secrets["TELEGRAM_TOKEN"]
                     CHAT_ID = st.secrets["TELEGRAM_CHAT_ID"]
                     pesan = f"⚠️ Sales mencari barang tapi tidak ada: {', '.join(not_found)}"
-                    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text={pesan}"
-                    requests.get(url)
+                    requests.get(f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text={pesan}")
                     st.success("Notifikasi sudah dikirim ke Direksi!")
-                except Exception as e:
+                except:
                     st.warning("Gagal mengirim notifikasi.")
+
     # --- TAB 2: AREA DIREKSI ---
     with tab2:
         st.subheader("📊 Area Manajemen Direksi")
@@ -75,7 +82,7 @@ try:
 
         if not st.session_state.logged_in:
             password = st.text_input("Masukkan Password Direksi:", type="password", key="pass_input")
-            if password == "Admin123": 
+            if password == "Admin123": # GANTI PASSWORD DISINI
                 st.session_state.logged_in = True
                 st.rerun()
             elif password: st.error("Password Salah!")
@@ -85,8 +92,9 @@ try:
                 st.session_state.logged_in = False
                 st.rerun()
             
-            search_dir = st.text_input("🔍 Cari PN atau Keterangan [(,) (;) untuk banyak]:", key="s_dir")
-            df_dir = df[['PART NUMBER', 'KETERANGAN', 'MEREK', 'MODAL', 'SUPPLIER']]
+            search_dir = st.text_input("🔍 Cari data internal:", key="s_dir")
+            # DITAMBAHKAN KOLOM 'ALTER'
+            df_dir = df[['PART NUMBER', 'KETERANGAN', 'MEREK', 'HARGA', 'MODAL', 'SUPPLIER', 'ALTER']]
             
             if search_dir:
                 queries = [q.strip() for q in re.split(r'[;,]', search_dir)]

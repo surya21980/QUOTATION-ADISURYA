@@ -33,7 +33,7 @@ try:
             queries = [q.strip() for q in re.split(r'[;,]', search_sales)]
             
             # Kolom untuk Sales
-            df_sales = df[['PART NUMBER', 'KETERANGAN', 'MEREK', 'HARGA', 'BARIS KE', 'CUST']]
+            df_sales = df[['PART NUMBER', 'KETERANGAN', 'MEREK', 'HARGA', 'BARIS KE', 'TANGGAL UPDATE', 'CUST']]
             
             filtered = df_sales[df_sales.apply(lambda row: any(any(str(q).lower() in str(cell).lower() for q in queries) for cell in row), axis=1)]
             

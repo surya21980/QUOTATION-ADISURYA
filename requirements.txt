@@ -1,4 +1,7 @@
 streamlit
 pandas
+requests
+google-genai
+streamlit-paste-button
 gspread
 oauth2client
